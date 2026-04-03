@@ -4,6 +4,8 @@ from dataclasses import asdict
 from pathlib import Path
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -18,15 +20,19 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QPlainTextEdit,
+    QScrollArea,
     QSpinBox,
     QDoubleSpinBox,
     QVBoxLayout,
     QWidget,
+    QFrame,
+    QSizePolicy,
 )
 
 from src.graph import Graph
 from src.sa import AnnealingConfig, simulated_annealing
 from src.stp_parser import parse_stp_file
+from src.visualization_qt import graph_pixmap, save_graph_image
 
 
 def build_demo_graph() -> Graph:
@@ -93,12 +99,33 @@ class AnnealingWindow(QMainWindow):
         self.run_button = QPushButton("Run")
         self.run_button.clicked.connect(self._on_run)
 
+        self.visualize_button = QPushButton("Visualize")
+        self.visualize_button.clicked.connect(self._on_visualize)
+
+        self.save_image_button = QPushButton("Save image")
+        self.save_image_button.clicked.connect(self._on_save_image)
+
         self.clear_button = QPushButton("Clear output")
         self.clear_button.clicked.connect(self._clear_output)
 
         self.status_label = QLabel("Ready")
         self.output = QPlainTextEdit()
         self.output.setReadOnly(True)
+
+        self.preview_label = QLabel("Visualization preview")
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.preview_label.setMinimumHeight(320)
+        self.preview_label.setFrameShape(QFrame.Shape.StyledPanel)
+        self.preview_label.setStyleSheet("background: white; border: 1px solid #d1d5db;")
+
+        self.preview_scroll = QScrollArea()
+        self.preview_scroll.setWidgetResizable(True)
+        self.preview_scroll.setWidget(self.preview_label)
+
+        self.current_graph: Graph | None = None
+        self.current_route: list[int] | None = None
+        self.current_pixmap: QPixmap | None = None
 
         self._build_ui()
         self._toggle_custom_path(self.instance_combo.currentText())
@@ -137,11 +164,14 @@ class AnnealingWindow(QMainWindow):
 
         actions = QHBoxLayout()
         actions.addWidget(self.run_button)
+        actions.addWidget(self.visualize_button)
+        actions.addWidget(self.save_image_button)
         actions.addWidget(self.clear_button)
         actions.addStretch(1)
         actions.addWidget(self.status_label)
         root.addLayout(actions)
 
+        root.addWidget(self.preview_scroll, 2)
         root.addWidget(self.output, 1)
         self.setCentralWidget(central)
 
@@ -178,6 +208,50 @@ class AnnealingWindow(QMainWindow):
     def _clear_output(self) -> None:
         self.output.clear()
 
+    def _update_preview(self) -> None:
+        if self.current_graph is None:
+            return
+
+        self.current_pixmap = graph_pixmap(self.current_graph, route=self.current_route)
+        self.preview_label.setPixmap(
+            self.current_pixmap.scaled(
+                self.preview_scroll.viewport().size(),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
+
+    def _on_visualize(self) -> None:
+        try:
+            self.current_graph = self._resolve_graph()
+            self.current_route = None
+            self._update_preview()
+            self.status_label.setText("Preview ready")
+            self._append_output("Visualization preview generated.")
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self, "Visualization error", str(exc))
+
+    def _on_save_image(self) -> None:
+        if self.current_graph is None:
+            try:
+                self.current_graph = self._resolve_graph()
+            except Exception as exc:  # noqa: BLE001
+                QMessageBox.critical(self, "Save image", str(exc))
+                return
+
+        output_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save graph image",
+            str(Path.cwd() / "graph_visualization.png"),
+            "PNG files (*.png);;All files (*)",
+        )
+        if not output_path:
+            return
+
+        save_graph_image(self.current_graph, output_path, route=self.current_route)
+        self._append_output(f"Saved image to: {output_path}")
+        self.status_label.setText("Image saved")
+
     def _append_output(self, text: str) -> None:
         self.output.appendPlainText(text)
 
@@ -211,6 +285,8 @@ class AnnealingWindow(QMainWindow):
             return
 
         self.run_button.setEnabled(False)
+        self.visualize_button.setEnabled(False)
+        self.save_image_button.setEnabled(False)
         self.status_label.setText("Running...")
         self._append_output("--- Run started ---")
         self._append_output(f"Config: {asdict(config)}")
@@ -235,8 +311,15 @@ class AnnealingWindow(QMainWindow):
             self.worker_thread.deleteLater()
             self.worker_thread = None
         self.run_button.setEnabled(True)
+        self.visualize_button.setEnabled(True)
+        self.save_image_button.setEnabled(True)
 
     def _on_run_finished(self, route: list[int], best_cost: float, history_len: int) -> None:
+        if self.worker is not None:
+            self.current_graph = self.worker.graph
+        self.current_route = route
+        self._update_preview()
+
         graph = self.worker.graph if self.worker is not None else None
         if graph is not None:
             route_names = route_to_names(graph, route)
@@ -248,6 +331,8 @@ class AnnealingWindow(QMainWindow):
         self._append_output("--- Run finished ---")
         self.status_label.setText("Done")
         self.run_button.setEnabled(True)
+        self.visualize_button.setEnabled(True)
+        self.save_image_button.setEnabled(True)
 
     def _on_run_failed(self, error_text: str) -> None:
         self._append_output(f"Error: {error_text}")
