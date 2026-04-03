@@ -1,4 +1,10 @@
+from __future__ import annotations
+
+import argparse
+
 from src.graph import Graph
+from src.gui_qt import launch_gui
+from src.stp_parser import parse_stp_file
 from src.sa import AnnealingConfig, simulated_annealing
 
 
@@ -20,8 +26,7 @@ def route_to_names(graph: Graph, route: list[int]) -> list[str]:
     return [graph.nodes[i] for i in route]
 
 
-def main() -> None:
-    graph = build_demo_graph()
+def run_instance(name: str, graph: Graph) -> None:
     config = AnnealingConfig(
         initial_temperature=100.0,
         final_temperature=0.1,
@@ -32,9 +37,23 @@ def main() -> None:
 
     best_route, best_cost, history = simulated_annealing(graph, config)
 
-    print("Best route:", route_to_names(graph, best_route))
-    print("Best cost:", best_cost)
-    print("History points:", len(history))
+    print(f"[{name}] Best route:", route_to_names(graph, best_route))
+    print(f"[{name}] Best cost:", best_cost)
+    print(f"[{name}] History points:", len(history))
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Simulated annealing TSP demo")
+    parser.add_argument("--gui", action="store_true", help="Launch the Qt GUI")
+    args = parser.parse_args()
+
+    if args.gui:
+        launch_gui()
+        return
+
+    run_instance("demo", build_demo_graph())
+    run_instance("berlin52.stp", parse_stp_file("berlin52.stp"))
+    run_instance("world666.stp", parse_stp_file("world666.stp"))
 
 
 if __name__ == "__main__":
