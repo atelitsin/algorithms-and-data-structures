@@ -33,18 +33,3 @@ class Graph:
             return float("inf")
         length += last_w
         return length
-
-
-nodes = ["a", "b", "c"]
-inf = float("inf")
-weights = [
-    [0,   3,   inf],
-    [3,   0,   5  ],
-    [inf, 5,   0  ],
-]
-graph = Graph(nodes, weights)
-print(graph.weight(0, 1))  # Output: 3
-print(graph.weight(0, 2))  # Output: inf
-print(graph.weight(1, 2))  # Output: 5
-route = [0, 1, 2]
-print(graph.cycle_length(route))  # Output: inf (because of the inf weight between nodes 0 and 2)

@@ -69,6 +69,16 @@ def _random_route(graph: Graph, rng: random.Random) -> list[int]:
     return route
 
 
+def _initial_route(graph: Graph, rng: random.Random) -> list[int]:
+    attempts = max(100, len(graph.nodes) * 20)
+    for _ in range(attempts):
+        route = _random_route(graph, rng)
+        if graph.cycle_length(route) != float("inf"):
+            return route
+
+    return _random_route(graph, rng)
+
+
 def simulated_annealing(
     graph: Graph,
     config: AnnealingConfig | None = None,
@@ -80,7 +90,7 @@ def simulated_annealing(
     config = config or AnnealingConfig()
     rng = random.Random(config.seed)
 
-    current_route = initial_route[:] if initial_route is not None else _random_route(graph, rng)
+    current_route = initial_route[:] if initial_route is not None else _initial_route(graph, rng)
     current_cost = graph.cycle_length(current_route)
     best_route = current_route[:]
     best_cost = current_cost
