@@ -1,0 +1,93 @@
+\documentclass[12pt,a4paper]{article}
+
+% Русский язык
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+
+% Математика и графика
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+
+% Таблицы
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{caption}
+\captionsetup[table]{justification=raggedleft,singlelinecheck=false}
+\setlength{\tabcolsep}{4pt}
+
+% Ссылки и оглавление
+\usepackage[hidelinks]{hyperref}
+\usepackage{tocloft}
+
+% Листинги кода
+\usepackage{listings}
+\usepackage{fancyvrb}
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    literate=
+      {—}{{--}}1
+      {←}{{$\leftarrow$}}1
+      {→}{{$\rightarrow$}}1
+}
+
+% Геометрия и отступы
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2cm,bottom=2cm}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+% Формат заголовков
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+
+% Титульный лист
+\begin{titlepage}
+    \centering
+    {\large \textbf{САНКТ-ПЕТЕРБУРГСКИЙ ГОСУДАРСТВЕННЫЙ УНИВЕРСИТЕТ}} \\[0.5cm]
+    {\large Факультет прикладной математики--процессов управления} \\[0.5cm]
+    {\large Программа бакалавриата} \\[0.2cm]
+    {\large \textbf{«Большие данные и распределенная цифровая платформа»}} \\[4.5cm]
+
+    {\Large \textbf{ОТЧЕТ}} \\[0.3cm]
+    {\large По лабораторной работе № 2} \\[0.2cm]
+    {\large По дисциплине «Алгоритмы и структуры данных»} \\[0.2cm]
+    {\large На тему «Исследование задачи коммивояжера через алгоритм имитации отжига и муравьиный алгоритм с модификациями»} \\[4cm]
+
+    \begin{flushright}
+        Студент гр. 24Б15-пу \\
+        Телицин А.Д. \\[0.5cm]
+        Преподаватель \\
+        Дик А.Г. \\[1cm]
+    \end{flushright}
+
+    \vfill
+    \centering
+    Санкт-Петербург \\
+    2026 г.
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Цель работы}
+\label{sec:goal}
+
+Целью работы является исследование и сравнительный анализ качества решения задачи коммивояжера с помощью:
+\begin{enumerate}
+    \item базового алгоритма имитации отжига;
+    \item модифицированного алгоритма имитации отжига (больцмановское охлаждение);
+    \item базового муравьиного алгоритма;
+    \item модифицированного муравьиного алгоритма («начальное расположение»).
+\end{enumerate}
+
+Основной акцент в сравнении делается на качестве получаемого маршрута (длине гамильтонова цикла), затем на времени выполнения и стабильности результатов при изменении параметров. Эксперименты проводятся на среднеразмерном графе Berlin52 и крупном графе World666.
+
+\end{document}
