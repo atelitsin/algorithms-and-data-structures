@@ -1,0 +1,5 @@
+PyQt6==6.11.0
+PyQt6-Qt6==6.11.0
+PyQt6_sip==13.11.1
+matplotlib==3.10.7
+numpy==2.3.4
